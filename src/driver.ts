@@ -139,10 +139,13 @@ export class DeezerDriver
   }
 
   protected async getUserInfo(
-    token: string,
+    token: {
+      token: string
+      type: 'bearer'
+    },
     callback?: (request: ApiRequestContract) => void
-  ) {
-    const request = await this.getAuthenticatedRequest(token)
+  ): Promise<AllyUserContract<any>> {
+    const request = await this.getAuthenticatedRequest(token.token)
 
     /**
      * Allow end user to configure the request. This should be called after your custom
@@ -162,7 +165,8 @@ export class DeezerDriver
       email: user.email || null,
       emailVerificationState: 'unsupported',
       avatarUrl: user.picture,
-      original: user
+      original: user,
+      token: token
     }
   }
 
@@ -175,15 +179,18 @@ export class DeezerDriver
    */
   async user(callback?: (request: ApiRequestContract) => void): Promise<AllyUserContract<DeezerAccessToken>> {
     const accessToken = await this.accessToken()
-    const user = await this.getUserInfo(accessToken.token, callback)
-
-    return {...user, token: accessToken} as AllyUserContract<DeezerAccessToken>
-  }
-
-  async userFromToken(accessToken: string, callback?: (request: ApiRequestContract) => void ): Promise<AllyUserContract<{ token: string; type: 'bearer' }>> {
     const user = await this.getUserInfo(accessToken, callback)
 
-    return {...user, token: accessToken} as AllyUserContract<DeezerAccessToken>
+    return user
+  }
+
+  async userFromToken(accessToken: string, callback?: (request: ApiRequestContract) => void): Promise<AllyUserContract<{token: string, type: 'bearer' }>> {
+    const user = await this.getUserInfo({
+      token: accessToken,
+      type: 'bearer'
+    }, callback)
+
+    return user
   }
 }
 

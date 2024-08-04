@@ -1,5 +1,5 @@
 {
-  "name": "ally-custom-service",
+  "name": "deezer-ally-driver",
   "description": "Starter kit to create an Ally driver for an OAuth2 service",
   "version": "0.0.0",
   "main": "index.js",
