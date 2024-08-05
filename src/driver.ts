@@ -56,7 +56,7 @@ export class DeezerDriver
   implements AllyDriverContract<DeezerAccessToken, DeezerScopes> {
 
   protected authorizeUrl = 'https://connect.deezer.com/oauth/auth.php'
-  protected accessTokenUrl = 'https://connect.deezer.com/oauth/access_token.php'
+  protected accessTokenUrl = 'https://connect.deezer.com/oauth/access_token.php?content-type=application/json'
 
   protected userInfoUrl = 'https://api.deezer.com/user/me'
 
@@ -135,7 +135,32 @@ export class DeezerDriver
   }
 
   protected async getAuthenticatedRequest(token: string) {
-    return this.httpClient(this.config.userInfoUrl || this.userInfoUrl).header('Authorization', `Bearer ${token}`)
+    return this.httpClient(this.config.userInfoUrl || this.userInfoUrl).param('access_token', token)
+  }
+
+  protected async customAccessToken() {
+    const code = this.ctx.request.input('code')
+
+    const request = this.httpClient(this.config.accessTokenUrl || this.accessTokenUrl)
+
+    request
+      .header('content-type', 'application/x-www-form-urlencoded')
+      .field('app_id', this.config.clientId)
+      .field('secret', this.config.clientSecret)
+      .field('code', code)
+      .field('redirect_uri', this.config.callbackUrl)
+
+    const response = await request.post()
+    const params = new URLSearchParams(response);
+    const payload = Object.fromEntries(params.entries());
+    console.log(payload)
+
+    return {
+      token: payload.access_token,
+      type: 'bearer',
+      expiresIn: parseInt(payload.expires, 10),
+    }
+
   }
 
   protected async getUserInfo(
@@ -156,7 +181,7 @@ export class DeezerDriver
     }
 
     const response = await request.get()
-    const user = response.body
+    const user = JSON.parse(response)
 
     return {
       id: user.id,
@@ -164,7 +189,7 @@ export class DeezerDriver
       name: user.name,
       email: user.email || null,
       emailVerificationState: 'unsupported',
-      avatarUrl: user.picture,
+      avatarUrl: user.picture_medium,
       original: user,
       token: token
     }
