@@ -153,7 +153,6 @@ export class DeezerDriver
     const response = await request.post()
     const params = new URLSearchParams(response);
     const payload = Object.fromEntries(params.entries());
-    console.log(payload)
 
     return {
       token: payload.access_token,
